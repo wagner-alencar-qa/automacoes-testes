@@ -35,7 +35,7 @@ class LoginPage(BasePage):
         self.wait_for_visible(self.USERNAME).send_keys(usuario)
 
     def preencher_senha(self, senha):
-        self.find(self.PASSWORD).send_keys(senha)
+        self.find(*self.PASSWORD).send_keys(senha)
 
     def clicar_login(self):
         self.wait_for_clickable(self.LOGIN_BUTTON).click()

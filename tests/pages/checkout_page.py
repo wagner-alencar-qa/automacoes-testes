@@ -14,8 +14,8 @@ class CheckoutPage(BasePage):
 
     def fill_customer_data(self, first_name, last_name, zip_code):
         self.wait_for_visible(self.FIRST_NAME).send_keys(first_name)
-        self.find(self.LAST_NAME).send_keys(last_name)
-        self.find(self.ZIP_CODE).send_keys(zip_code)
+        self.find(*self.LAST_NAME).send_keys(last_name)
+        self.find(*self.ZIP_CODE).send_keys(zip_code)
 
     def proximo(self):
         self.wait_for_clickable(self.CONTINUE).click()
@@ -25,6 +25,9 @@ class CheckoutPage(BasePage):
 
     def is_order_complete(self):
         return "THANK YOU FOR YOUR ORDER" in self.wait_for_visible(self.COMPLETE_HEADER).text.upper()
+
+    def get_success_message(self):
+        return self.wait_for_visible(self.COMPLETE_HEADER).text
 
     def get_error_message(self):
         return self.wait_for_visible(self.ERROR_MESSAGE).text
