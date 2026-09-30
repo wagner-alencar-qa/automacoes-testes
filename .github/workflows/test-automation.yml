@@ -1,0 +1,59 @@
+name: Automação de Testes Inteligentes
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+
+    steps:
+    - name: 📥 Checkout do Código
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurar Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 📦 Instalar Dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-html
+
+    - name: 🧪 Executar Testes (Smoke)
+      id: smoke_tests
+      run: |
+        pytest tests/specs -m smoke -v --tb=short --html=reports/smoke_report.html || true
+
+    - name: 🧪 Executar Testes (Regressão)
+      id: regression_tests
+      run: |
+        pytest tests/specs -m regression -v --tb=short --html=reports/regression_report.html || true
+
+    - name: 📊 Gerar Relatório Consolidado
+      if: always()
+      run: |
+        pytest tests/specs -v --tb=short --html=reports/test_report.html --self-contained-html
+
+    - name: 📤 Upload dos Relatórios
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: pytest-reports
+        path: reports/
+
+    - name: ✅ Resumo da Execução
+      if: always()
+      run: |
+        echo "🎯 Pipeline executado com sucesso!"
+        echo "📍 Usuário: wagner-alencar-qa"
+        echo "📅 Data: $(date)"
+        echo "🔗 Repositório: ${{ github.repository }}"
