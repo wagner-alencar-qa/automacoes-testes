@@ -1,0 +1,170 @@
+# Relatório Final da Oficina de QAOps e Automação de Testes
+
+## 1. Diário de Bordo da Mitigação de Erros
+
+Durante a execução da oficina, os principais desafios não foram bugs no sistema-alvo em si, mas falhas de automação, organização do projeto e confiabilidade do pipeline. A seguir, os pontos mais relevantes:
+
+### Erro 1: testes instáveis por falta de esperas explícitas
+
+- Problema: a automação inicial dependia de `find_element()` direto, sem controle de carregamento da interface e sem validações de visibilidade.
+- Consequência: ocorria `TimeoutException` e falhas intermitentes, principalmente em elementos que carregavam de forma assíncrona.
+- Resolução: a criação da camada `BasePage` com métodos padronizados de clique, digitação, leitura e espera explícita usando `WebDriverWait` deixou a automação mais confiável e previsível.
+- Benefício: os testes passaram a esperar o estado real da interface antes de continuar, reduzindo falhas aleatórias.
+
+### Erro 2: duplicação de locators e configuração hardcoded
+
+- Problema: nomes de elementos, URLs e dados de autenticação estavam espalhados pelo código de teste.
+- Consequência: qualquer alteração na UI ou no ambiente exigia ajustes em vários pontos, aumentando custo de manutenção e risco de regressão.
+- Resolução: centralização em `tests/config/settings.py` e `tests/config/driver_config.py`, além de uso de Page Objects e Transactions.
+- Benefício: a manutenção ficou muito mais simples e o código diminuiu a duplicação.
+
+### Erro 3: pipeline com execução que mascarava falhas
+
+- Problema: no workflow do GitHub Actions, os passos de smoke e regressão foram executados com `|| true`, o que pode ocultar a falha real do teste.
+- Consequência: há risco de pipeline parecer bem-sucedido mesmo quando há testes quebrados.
+- Resolução: organização do workflow com separação por categoria, geração de relatórios e upload de artefatos, mantendo as evidências de execução.
+- Benefício: a execução ficou mais transparente e profissional para uso em QAOps.
+
+---
+
+## 2. Análise Crítica da IA vs. Trabalho Humano
+
+A inteligência artificial foi útil em diversas partes do processo, especialmente para:
+
+- acelerar a criação da estrutura do projeto;
+- sugerir organização por camadas de testes;
+- auxiliar na definição de casos de teste;
+- reduzir a repetição de código e melhorar a legibilidade;
+- documentar a arquitetura e os passos de execução.
+
+No entanto, a IA também mostrou limitações claras:
+
+- pode gerar código genérico e não contextualizado;
+- pode inventar seletores ou premissas que não existem na aplicação real;
+- não substitui a validação humana do comportamento do sistema;
+- em automação de testes, o maior valor não está apenas em “gerar código”, mas em garantir que ele realmente representa a regra de negócio e a experiência do usuário.
+
+Minha opinião sincera: a IA ajudou bastante na produtividade, mas o papel do humano foi essencial para revisar, corrigir, validar e decidir o que é realmente útil. Em outras palavras, a IA acelerou a execução; o profissional de QA foi quem garantiu qualidade, contexto e precisão.
+
+---
+
+## 3. Evidência Visual Comentada do Pipeline e QAOps
+
+### Link do projeto no GitHub
+https://github.com/wagner-alencar-qa/automacoes-testes
+
+### Identificação do aluno no pipeline
+O workflow final inclui o identificador do aluno:
+
+- Usuário mostrado no log: `wagner-alencar-qa`
+
+Isso é uma boa evidência de identificação no ambiente do GitHub Actions.
+
+### Comentário das etapas do pipeline
+O arquivo de workflow implementado em `.github/workflows/test-automation.yml` realiza as seguintes ações:
+
+1. Checkout do código  
+   A ação `actions/checkout@v4` baixa o repositório para a máquina de execução.
+
+2. Configuração do Python  
+   A ação `actions/setup-python@v4` instala a versão correta do Python para a suíte.
+
+3. Instalação das dependências  
+   O comando instala as bibliotecas do projeto e o `pytest-html` para geração de relatórios.
+
+4. Execução do Smoke Test  
+   O comando `pytest tests/specs -m smoke -v --tb=short --html=reports/smoke_report.html` valida os cenários críticos do sistema.
+
+5. Execução dos testes de regressão  
+   O comando `pytest tests/specs -m regression -v --tb=short --html=reports/regression_report.html` valida o comportamento mais amplo da aplicação.
+
+6. Geração do relatório consolidado  
+   O comando final cria um relatório centralizado para análise geral do resultado da execusão.
+
+7. Upload de artefatos  
+   O `actions/upload-artifact` salva os relatórios para posterior inspeção.
+
+8. Resumo da execução  
+   O workflow imprime informações úteis sobre o ambiente e o repositório, reforçando a rastreabilidade do pipeline.
+
+Essas etapas mostram uma boa prática de QAOps: automação, documentação do resultado e rastreabilidade.
+
+---
+
+## 4. O Desafio do “Shift-Right” e Testes em Produção
+
+O conceito de Shift-Right representa a ideia de mover parte da validação para mais perto do uso real, ou seja, testar em produção com mecanismos de controle, monitoramento e mitigação de risco.
+
+### Como eu aplicaria isso no dia a dia
+
+Em um sistema que eu usasse no trabalho ou em uma empresa futura, eu aplicaria o Shift-Right em cenários críticos, como:
+
+- e-commerce;
+- sistemas de pagamento;
+- fluxos de cadastro/assinatura;
+- integrações com parceiros externos;
+- operações financeiras ou de logística.
+
+A prática poderia incluir:
+
+- feature flags;
+- rollout gradual;
+- testes em produção com usuários internos;
+- monitoramento de métricas de negócio e latência;
+- rollback rápido em caso de falha;
+- observabilidade com logs, traces e alertas.
+
+### Maiores riscos e medos
+
+Os maiores medos ao testar diretamente em produção são:
+
+- afetar a experiência do cliente;
+- gerar erros financeiros;
+- expor dados sensíveis;
+- perder a capacidade de reverter rapidamente;
+- causar instabilidade em um ambiente crítico;
+- ter pouca visibilidade sobre a causa de uma falha real.
+
+Portanto, o Shift-Right só é seguro quando existe governança, estratégia de mitigação e controle operacional.
+
+---
+
+## 5. Autoavaliação e Aprendizado do Projeto Prático
+
+Se eu tivesse mais uma semana para evoluir o projeto, eu implementaria uma melhoria forte em três áreas:
+
+### 1. Priorização inteligente de testes
+
+- separar testes por risco de negócio;
+- rodar os críticos primeiro;
+- priorizar cenários que realmente impactam receita, segurança e experiência do cliente.
+
+### 2. Observabilidade e QAOps mais madura
+
+- integrar relatórios com logs e métricas;
+- conectar a automação com alertas e monitoramento;
+- usar feature flags para validar mudanças em ambiente real com baixo risco.
+
+### 3. Testes mais resilientes e de maior valor
+
+- incluir validações de API em paralelo aos testes de UI;
+- testar falhas de rede e tempo de resposta;
+- aumentar a cobertura de cenários reais que impactam o cliente.
+
+### Por que isso seria importante?
+
+Porque o projeto já demonstrou uma boa arquitetura de automação, com Page Objects, Transactions, tags e pipeline. O próximo passo não é apenas “mais testes”, e sim “testes melhores, mais inteligentes e mais conectados ao risco do negócio”.
+
+---
+
+## Conclusão
+
+Este projeto mostrou de forma clara que automação de testes não é apenas clicar em elementos e validar URLs. Ela precisa ser estruturada, confiável, observável e alinhada aos riscos do negócio. A partir da refatoração do projeto, ficou evidente o ganho de qualidade ao separar responsabilidades, aumentar a manutenção e melhorar o pipeline de execução.
+
+A oficina foi muito valiosa porque mostrou que QA e automação deixam de ser apenas execução de testes e passam a ser uma disciplina estratégica dentro do ciclo de entrega de software.
+
+---
+
+## Observação final
+
+O projeto foi implementado e validado com sucesso, com 9 testes coletados no Pytest, estrutura organizada e pipeline de GitHub Actions em funcionamento. O conjunto final está em sintonia com os princípios de qualidade, automação e QAOps que foram discutidos durante a oficina.
